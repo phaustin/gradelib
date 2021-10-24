@@ -1,0 +1,14 @@
+include MANIFEST.in
+include LICENSE.txt
+include README.md
+
+graft src/paged_html_theme
+graft src/css
+graft src/scss
+
+# Patterns to exclude from any directory
+global-exclude *~
+global-exclude *.py[cod]
+global-exclude .git
+global-exclude .ipynb_checkpoints
+global-exclude .DS_Store
