@@ -2,7 +2,7 @@ from setuptools_scm import get_version
 from pathlib import Path
 root_dir = Path().resolve()
 print(f"{root_dir=}")
-code_dir= root_dir / 'src/paged_html_theme'
+code_dir= root_dir / 'src/gradelib'
 git_version = get_version(root=str(root_dir))
 print(f"{git_version=}")
 version_file = code_dir / 'VERSION.txt'

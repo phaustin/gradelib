@@ -1,10 +1,7 @@
 include MANIFEST.in
 include LICENSE.txt
-include README.md
+include Readme.md
 
-graft src/paged_html_theme
-graft src/css
-graft src/scss
 
 # Patterns to exclude from any directory
 global-exclude *~
