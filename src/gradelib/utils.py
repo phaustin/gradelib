@@ -5,12 +5,20 @@ from pathlib import Path
 import numpy as np
 from fuzzywuzzy import fuzz
 import pdb
+import contextlib
+import os
 
+@contextlib.contextmanager
+def working_directory(path):
+    """Changes working directory and returns to previous on exit."""
+    prev_cwd = Path.cwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(prev_cwd)
 
 def make_upload(df_canvas):
-    """
-    make a upload frame with a sort_order column
-    """
     can_grade_cols = list(df_canvas.columns.to_list())
     can_mandatory_columns = list(can_grade_cols[:5])
     df_upload = pd.DataFrame(df_canvas[can_mandatory_columns], copy=True)
@@ -24,17 +32,13 @@ def make_upload(df_canvas):
     return df_upload
 
 def make_id(df,idcol):
-    df = pd.DataFrame(df,copy=True)
     try:
         the_ids = df[idcol].to_numpy()
-        #breakpoint()
         the_ids = floatvec_to_string(the_ids)
     except TypeError:
-        print("hit non-fatal type error in makeid")
-        print(f"here is the last id {the_ids[-1]}")
-        # for item in the_ids:
-        #     print(item)
-        #     print(float(item))
+        print("hit type error in makeid")
+        print(f"here are the_ids {the_ids}")
+        #pdb.set_trace()
     df.loc[:, "the_ids"] = the_ids
     df.set_index("the_ids", inplace=True, drop=False)
     return df
@@ -46,10 +50,6 @@ def find_possible(df_canvas):
     return possible_row
 
 def make_canvas_index(df_canvas,idcol='Student Number'):
-    """
-    produce a datafame with nans set to 0 for all columns
-    bigger than start_col -- i.e. convert scores but not ids
-    """
     df_canvas = pd.DataFrame(make_id(df_canvas,idcol),copy=True)
     possible_row = find_possible(df_canvas)
     #print(f"\nfound points possible row:\n {possible_row}\n\n")
@@ -58,58 +58,40 @@ def make_canvas_index(df_canvas,idcol='Student Number'):
     #
     hit = [item[0] == '-' for item in df_canvas.index]
     df_canvas.drop(df_canvas.index[hit], inplace=True)
-    has_lab=False
-    for col_num, col_name in enumerate(df_canvas.columns):
-        if col_name == 'Lab':
-            has_lab=True
-            break
-    if has_lab:
-        start_col = col_num +1
-    else:
-        start_col = 7
-    type_dict = {key: np.float for key in df_canvas.columns.values[start_col:]}
+    type_dict = {key: np.float for key in df_canvas.columns.values[7:]}
     new_canvas_df = df_canvas.astype(dtype=type_dict)
     new_canvas_df.fillna(0., inplace=True)
     return new_canvas_df, possible_row
 
-def record_from_name(the_name,the_df,name_col='Student'):
-    record_name, record_num =find_closest(the_name,the_df[name_col])
-    return the_df.iloc[record_num]
-    
-    
 
 
-def find_closest(the_string, good_strings,threshold=None):
+def find_closest(the_id, good_ids):
     """
-    search through a list of strings and return the
-    members of good_strings that are closest to the_string
+    search through a list of good_ids and return the
+    member of good_ids that is closest to the_id
 
     Parameters
     ----------
 
-    the_string: string
-      stirng to test
+    the_id: string
+      id to test
 
-    good_strings: list of strings
-      the gradebook strings to test against
-
-    threshold: float
-      if None, then return best match, otherwise
-      return all matchews that score higher than a threshold
+    good_ids: list of strings
+      the gradebook ids to test against
 
     Returns
     -------
 
-    good_choice,max_index: string, int
+    good_choice: string
        best fit string
     """
     score_list = []
-    for choice in good_strings:
-        score_list.append(fuzz.ratio(the_string, choice))
+    for choice in good_ids:
+        score_list.append(fuzz.ratio(the_id, choice))
     score_array = np.array(score_list)
     max_index = np.argmax(score_array)
-    good_choice = good_strings[max_index]
-    return good_choice, max_index
+    good_choice = good_ids[max_index]
+    return good_choice
 
 
 def floatvec_to_string(float_vec):
@@ -120,10 +102,7 @@ def floatvec_to_string(float_vec):
             string_vec.append(str(nan_counter))
             nan_counter -= 1
         else:
-            try:
-                string_vec.append(str(int(item)))
-            except TypeError:
-                print(f"hit typeerror in floatvec_to_string for {item=}")
+            string_vec.append(str(int(item)))
     return string_vec
 
 def make_group_index(df_group):
@@ -150,7 +129,7 @@ def make_group_index(df_group):
                        f"sudent number {item} set to '-999'"))
                 the_id = str(-999)
             group_id_list.append(the_id)
-            row_list.append({"id": the_id, "Percent Score": the_score})
+            row_list.append({"id": the_id, "group_score": the_score})
         group_list.append(row_list)
     group_scores = []
     for a_row in group_list:
@@ -179,14 +158,13 @@ def make_ind_index(df_ind):
     return df_ind
 
 
-def merge_two(df_left, df_right,suffixes=('_x', '_y')):
+def merge_two(df_left, df_right):
     df_return = pd.merge(df_left,
                          df_right,
                          how="left",
                          left_index=True,
                          right_index=True,
-                         sort=False,
-                         suffixes=suffixes)
+                         sort=False)
     return pd.DataFrame(df_return, copy=True)
 
 
