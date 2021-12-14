@@ -45,6 +45,12 @@ def move_files(file_list, new_zip, orig_zip=None):
 
 
 def write_collect(oldname, new_zip, assign_name, notebook_name):
+    """
+    oldname: canvas zipfile
+    new_zip: revised zipfile
+    assign_name: nbgrader assignment
+    notebook_name: notebook to run
+    """
     oldname = Path(oldname)
     new_zip = Path(new_zip)
     namelist = []
@@ -59,13 +65,21 @@ def write_collect(oldname, new_zip, assign_name, notebook_name):
         temp_dir = Path(tmpdirname)
         with ZipFile(oldname, "r") as myzip:
             out = myzip.infolist()
-            print(out)
+            print(f"in make_zip: {out}")
             print("created temporary directory", temp_dir)
             for i, the_zip in enumerate(out):
                 print("zip filename: ", the_zip.filename)
                 elements = the_zip.filename.split("_")
+                if elements[1]=='LATE':
+                    late = elements.pop(1)
+                    print('found late')
+                if (elements[-1].find('ipynb') == -1 or
+                    elements[-1].find('func') > -1):
+                    print(f"skipping {the_zip.filename}")
+                    continue
                 #
                 # mercerkendra_27495_4022961_Finite_Volume_Assignment.ipynb
+                # or mercerkendra_LATE_27495_4022961_Finite_Volume_Assignment.ipynb
                 #
                 # student name is elements[0]
                 #

@@ -27,14 +27,15 @@ def make_id(df,idcol):
     df = pd.DataFrame(df,copy=True)
     try:
         the_ids = df[idcol].to_numpy()
-        #breakpoint()
+    except TypeError:
+        print("conversion error in id column to_numpy")
+        print("check df[idcol].to_numpy()")
+        breakpoint()
+    try:
         the_ids = floatvec_to_string(the_ids)
     except TypeError:
-        print("hit non-fatal type error in makeid")
-        print(f"here is the last id {the_ids[-1]}")
-        # for item in the_ids:
-        #     print(item)
-        #     print(float(item))
+        print("hit non-fatal type error in  floatvec_to_string in make_id")
+        
     df.loc[:, "the_ids"] = the_ids
     df.set_index("the_ids", inplace=True, drop=False)
     return df
@@ -55,7 +56,7 @@ def make_canvas_index(df_canvas,idcol='Student Number'):
     #print(f"\nfound points possible row:\n {possible_row}\n\n")
     #
     # drop non-id rows and cast to float
-    #
+    #g
     hit = [item[0] == '-' for item in df_canvas.index]
     df_canvas.drop(df_canvas.index[hit], inplace=True)
     has_lab=False
@@ -116,14 +117,18 @@ def floatvec_to_string(float_vec):
     nan_counter = -1
     string_vec = []
     for item in float_vec:
+        #print(f"in floatvec_to_string processing {item=}")
         if np.isnan(item):
-            string_vec.append(str(nan_counter))
+            strcount = str(nan_counter)
+            string_vec.append(strcount)
             nan_counter -= 1
         else:
             try:
-                string_vec.append(str(int(item)))
+                strid = str(int(item))
             except TypeError:
-                print(f"hit typeerror in floatvec_to_string for {item=}")
+                print(f"hit type error in floatvec_to_string for {item=}")
+                breakpoint()
+            string_vec.append(strid)
     return string_vec
 
 def make_group_index(df_group):
@@ -161,8 +166,9 @@ def make_group_index(df_group):
 
 def calc_grades(ax,scores,nbins=10):
     the_median=np.nanmedian(scores)
+    the_mean=np.nanmean(scores)
     ax.hist(scores,nbins)
-    return ax,the_median
+    return ax,the_median, the_mean
 
 def make_ind_index(df_ind):
     ind_id_list = []
