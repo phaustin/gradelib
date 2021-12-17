@@ -1,12 +1,12 @@
 """
-read a canvas notebook submission zip file and rename to
-standard pattern
+custom rewrite of files in canvas zip
 """
 import json
 import shutil
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
+#from .make_zip iport list_files
 
 from .utils import working_directory
 
@@ -42,7 +42,6 @@ def move_files(file_list, new_zip, orig_zip=None):
                     out_zip.write(the_file)
             shutil.copy(new_zip, new_zip.parent)
             print(f"copied to {new_zip} to {new_zip.parent}")
-
 
 def write_collect(oldname, new_zip, assign_name, notebook_name):
     """
