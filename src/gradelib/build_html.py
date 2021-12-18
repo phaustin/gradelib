@@ -1,10 +1,10 @@
 """
 build web pages from ipynb files
 
-run_notebooks orig_notebook_dir file_re
+build_html notebook_dir file_re
 
 e.g.:
-run_notebooks autograded "lab_wk9*ipynb"
+build_html autograded "lab_wk9*ipynb"
 """
 
 from pathlib import Path
