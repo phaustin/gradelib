@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 from fuzzywuzzy import fuzz
 import pdb
+import pandas as pd
 
 
 def make_upload(df_canvas):
@@ -238,6 +239,40 @@ def read_raw_dfs(filenames):
     df_group = pd.read_excel(group_file)
     name_dict['files']['group_file'] = group_file
     return df_canvas, df_ind, df_group, name_dict
+
+#
+# apply this function to gradebook dataframe
+# produce a new dataframe indexed by canvasids
+#
+def get_canvas_id(row,track_bads):
+    try:
+        the_id = f"{int(row['ID']):d}"
+    except ValueError:
+        the_id = track_bads[-1]
+        new_id = the_id - 1
+        track_bads.append(new_id)
+    new_row = pd.Series(row[['Student']])
+    new_row['canvas_id'] = the_id
+    new_row['student_num'] = int(row['SIS User ID'])
+    return new_row
+
+
+def make_namedict(canvas_file):
+    """
+    turn a canvas file into dictionary with canvas id as key
+    """
+    the_list = pd.read_csv(canvas_file)
+    the_df,possible = make_canvas_index(the_list)
+    track_bads = [-999]
+    name_df = the_df.apply(get_canvas_id,args = (track_bads,),axis=1)
+    #
+    # make a dictionary id_dict of names and ids
+    #
+    name_df.set_index('canvas_id',inplace=True)
+    print(name_df.head())
+    id_dict = name_df.to_dict(orient='index')
+    return id_dict
+
 
 
 @main.command()

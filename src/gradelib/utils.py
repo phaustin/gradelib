@@ -7,16 +7,36 @@ from fuzzywuzzy import fuzz
 import pdb
 import contextlib
 import os
+from zipfile import ZipFile
 
 @contextlib.contextmanager
 def working_directory(path):
-    """Changes working directory and returns to previous on exit."""
+    """
+    Changes working directory and returns to previous on exit.
+    """
     prev_cwd = Path.cwd()
     os.chdir(path)
     try:
         yield
     finally:
         os.chdir(prev_cwd)
+
+def make_page(notebook_file,html_file):
+    with open(notebook_file,'r') as in_file:
+        html_exporter = HTMLExporter()
+        html_exporter.template_name = 'classic'
+        (body, resources) = html_exporter.from_file(in_file)
+    with open(html_file,'w') as out_file:
+        out_file.write(body)
+
+def unzip(zipfile, the_dir):
+    """
+    unzip zipfile into the_dir
+    """
+    with working_directory(the_dir):
+        with ZipFile(zipfile, "r") as in_zip:
+            in_zip.extractall()
+    return None
 
 def make_upload(df_canvas):
     can_grade_cols = list(df_canvas.columns.to_list())
