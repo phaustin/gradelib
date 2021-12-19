@@ -8,6 +8,7 @@ import pdb
 import contextlib
 import os
 from zipfile import ZipFile
+from nbconvert import HTMLExporter
 
 @contextlib.contextmanager
 def working_directory(path):
