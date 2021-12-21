@@ -20,11 +20,21 @@ import pandas as pd
 from .grade_lib import make_canvas_index, get_canvas_id, make_namedict
 from .utils import working_directory, unzip,  make_page
 
+import importlib_resources as ir
+def get_version(modulename):
+    contents=list(ir.contents(modulename))
+    with ir.open_text('gradelib','VERSION.txt') as f:
+        version=f.read()
+    return version
+
+version = get_version('gradelib')
+
 
 @click.command()
 @click.argument('canvas_file',type=str)
 @click.argument('zip_file',type=str)
 @click.argument('build_dir',type=str)
+@click.version_option(version)
 def main(canvas_file,zip_file,build_dir):
     """
     convert a canvas sumissions zip into a folder of web pages
