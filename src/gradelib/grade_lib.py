@@ -269,10 +269,10 @@ def make_namedict(canvas_file):
     # make a dictionary id_dict of names and ids
     #
     name_df.set_index('canvas_id',inplace=True)
-    for a,b in name_df.iterrows():
-        print(a,b)
-    id_dict = name_df.to_dict(orient='index')
-    return id_dict
+    out_dict = {}
+    for canvas_id,row in name_df.iterrows():
+        out_dict[canvas_id]=row['student_num']
+    return out_dict
 
 
 
