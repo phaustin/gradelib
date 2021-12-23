@@ -1,6 +1,7 @@
 import pandas as pd
 import click
 import json
+import pathlib
 from pathlib import Path
 import numpy as np
 from fuzzywuzzy import fuzz
@@ -16,7 +17,7 @@ def make_upload(df_canvas):
     can_mandatory_columns = list(can_grade_cols[:5])
     df_upload = pd.DataFrame(df_canvas[can_mandatory_columns], copy=True)
     #
-    # preserve order with this column
+    # preserve sort order with this column
     #
     can_col = np.linspace(
           -1, len(df_upload), num=len(df_upload), dtype=np.int, endpoint=False
@@ -25,19 +26,33 @@ def make_upload(df_canvas):
     return df_upload
 
 def make_id(df,idcol):
+    """
+    usage: the_df = make_id(the_df,'SIS User ID')
+    """
     df = pd.DataFrame(df,copy=True)
-    try:
-        the_ids = df[idcol].to_numpy()
-    except TypeError:
-        print("conversion error in id column to_numpy")
-        print("check df[idcol].to_numpy()")
-        breakpoint()
-    try:
-        the_ids = floatvec_to_string(the_ids)
-    except TypeError:
-        print("hit non-fatal type error in  floatvec_to_string in make_id")
-        
-    df.loc[:, "the_ids"] = the_ids
+    keep_bad = [-999]
+    def convert_col(row,keep_bad):
+        the_id = row[idcol]
+        try:
+            #
+            # '63514095.0'
+            #
+            the_int = int(float(the_id))
+            str_id = f"{int(the_int):d}"
+        except Exception as e:
+            print(f"id conversion problem in make_id: {e}")
+            print(f"{the_id=}")
+            bad_val = keep_bad[-1]
+            str_id = f"{int(bad_val):d}"
+            bad_val+= -1
+            keep_bad.append(bad_val)
+        row["the_ids"] = str_id
+        return row
+    
+    df = df.apply(convert_col,args=(keep_bad,),axis=1)
+    bad_num = len(keep_bad) - 1
+    if bad_num > 0:
+        print(f"found {bad_num} bad ids: replaced with {keep_bad[:-1]}")
     df.set_index("the_ids", inplace=True, drop=False)
     return df
 
@@ -47,7 +62,7 @@ def find_possible(df_canvas):
     possible_row = possible_row.iloc[0,:]
     return possible_row
 
-def make_canvas_index(df_canvas,idcol='Student Number'):
+def make_canvas_index(df_canvas,idcol='SIS User ID'):
     """
     produce a datafame with nans set to 0 for all columns
     bigger than start_col -- i.e. convert scores but not ids
@@ -56,8 +71,9 @@ def make_canvas_index(df_canvas,idcol='Student Number'):
     possible_row = find_possible(df_canvas)
     #print(f"\nfound points possible row:\n {possible_row}\n\n")
     #
-    # drop non-id rows and cast to float
-    #g
+    # drop negative integer non-id rows and cast all
+    # columns to the right of Lab or column 7 to float
+    #
     hit = [item[0] == '-' for item in df_canvas.index]
     df_canvas.drop(df_canvas.index[hit], inplace=True)
     has_lab=False
@@ -112,25 +128,6 @@ def find_closest(the_string, good_strings,threshold=None):
     max_index = np.argmax(score_array)
     good_choice = good_strings[max_index]
     return good_choice, max_index
-
-
-def floatvec_to_string(float_vec):
-    nan_counter = -1
-    string_vec = []
-    for item in float_vec:
-        #print(f"in floatvec_to_string processing {item=}")
-        if np.isnan(item):
-            strcount = str(nan_counter)
-            string_vec.append(strcount)
-            nan_counter -= 1
-        else:
-            try:
-                strid = str(int(item))
-            except TypeError:
-                print(f"hit type error in floatvec_to_string for {item=}")
-                breakpoint()
-            string_vec.append(strid)
-    return string_vec
 
 def make_group_index(df_group):
     group_ids = [
@@ -248,12 +245,13 @@ def get_canvas_id(row,track_bads):
     try:
         the_id = f"{int(row['ID']):d}"
     except ValueError:
-        the_id = track_bads[-1]
+        the_id = int(track_bads[-1])
         new_id = the_id - 1
+        the_id = f"{int(new_id):d}"
         track_bads.append(new_id)
     new_row = pd.Series(row[['Student']])
     new_row['canvas_id'] = the_id
-    new_row['student_num'] = int(row['SIS User ID'])
+    new_row['student_num'] = str(int(row['SIS User ID']))
     return new_row
 
 
@@ -261,18 +259,19 @@ def make_namedict(canvas_file):
     """
     turn a canvas file into dictionary with canvas id as key
     """
-    the_list = pd.read_csv(canvas_file)
-    the_df,possible = make_canvas_index(the_list)
+    if isinstance(canvas_file,str) or isinstance(canvas_file,pathlib.PurePath):
+        the_list = pd.read_csv(canvas_file)
+        the_df,possible = make_canvas_index(the_list)
+    else:
+        the_df = canvas_file
     track_bads = [-999]
     name_df = the_df.apply(get_canvas_id,args = (track_bads,),axis=1)
     #
     # make a dictionary id_dict of names and ids
     #
     name_df.set_index('canvas_id',inplace=True)
-    out_dict = {}
-    for canvas_id,row in name_df.iterrows():
-        out_dict[canvas_id]=row['student_num']
-    return out_dict
+    id_dict = name_df.to_dict(orient='index')
+    return id_dict
 
 
 
