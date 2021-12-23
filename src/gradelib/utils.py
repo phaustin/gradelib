@@ -303,11 +303,9 @@ def make_grades(filenames):
     check_ids(new_df_group, student_ids)
 
     df_out = merge_two(new_df_ind, new_df_group)
-    print(df_out.head())
 
     total_score = df_out.apply(mark_combined, axis=1)
     df_out["total_score"] = total_score
-    print(df_out.head())
 
     # #
     # # save points possible then drop it

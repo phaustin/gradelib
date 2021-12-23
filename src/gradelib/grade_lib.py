@@ -264,12 +264,14 @@ def make_namedict(canvas_file):
         the_df,possible = make_canvas_index(the_list)
     else:
         the_df = canvas_file
+        the_df,possible = make_canvas_index(the_df)
     track_bads = [-999]
     name_df = the_df.apply(get_canvas_id,args = (track_bads,),axis=1)
     #
     # make a dictionary id_dict of names and ids
     #
     name_df.set_index('canvas_id',inplace=True)
+    print('debug: ',name_df.head())
     id_dict = name_df.to_dict(orient='index')
     return id_dict
 
@@ -283,7 +285,7 @@ def check_columns(filenames):
         f"reading {name_dict['files']['gradebook']} head is:\n{df_canvas.head()}"
     )
     print(f"sample row: {df_canvas.loc[5]}")
-    print(df_ind.head())
+    print(f"{df_ind.head()=}")
     print(
         f"reading {name_dict['files']['ind_file']} head is:\n{df_ind.head()}")
     print(f"sample row: {df_ind.loc[5]}")
@@ -338,11 +340,9 @@ def make_grades(filenames):
     check_ids(new_df_group, student_ids)
 
     df_out = merge_two(new_df_ind, new_df_group)
-    print(df_out.head())
 
     total_score = df_out.apply(mark_combined, axis=1)
     df_out["total_score"] = total_score
-    print(df_out.head())
 
     # #
     # # save points possible then drop it

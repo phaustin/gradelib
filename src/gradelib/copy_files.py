@@ -51,7 +51,6 @@ def main(autograde_folder, lab9_funcs_dir):
     # make a dictionary id_dict of names and ids
     #
     name_df.set_index('canvas_id',inplace=True)
-    print(name_df.head())
     id_dict = name_df.to_dict(orient='index')
     #
     # make a dictionary week9_dict of autograder dirs
