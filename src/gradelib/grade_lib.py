@@ -25,11 +25,60 @@ def make_upload(df_canvas):
     df_upload["sort_order"] = can_col
     return df_upload
 
+
+def add_possible(df_upload,possible_row,col_name,possible_points):
+    possible_row[1:5] = " "
+    colnames = list(df_upload.columns[:5])
+    colnames.append(col_name)
+    possible_row = possible_row[:5].append(pd.Series([possible_points]))
+    the_rows = [dict(zip(colnames,possible_row.values))]
+    points_possible=pd.DataFrame.from_records(the_rows)
+    points_possible.index = ['-1']
+    df3=pd.concat([points_possible,df_upload])
+    return df3
+
+def find_student(name_string,grade_df,name_col='Student'):
+    """
+    find the student id for a name guess
+
+    Parameters
+    ----------
+
+    name_string: str -- "lastname, firstname"
+    grade_df: DataFrame -- gradebook dataframe indexed by student number
+    name_col: str -- name of column to use for first,last
+
+    Returns
+    -------
+
+    prints name and id
+    """
+    good_names = grade_df[name_col]
+    the_name, score = find_closest(name_string,good_names)
+    print(f"found {the_name}")
+    hit = good_names == the_name
+    result = grade_df.loc[hit]
+    print(result)
+    if isinstance(result,pd.Series):
+        the_id = result.name
+    else:
+        the_id = result.index[0]
+    return the_id
+
 def make_id(df,idcol):
     """
+    Parameters
+    ----------
+    df: either string filename of csv file or pandas dataframe
+    idcol: str 
+       name of column to make id
     usage: the_df = make_id(the_df,'SIS User ID')
     """
-    df = pd.DataFrame(df,copy=True)
+    if isinstance(df,str):
+        with open(df,'r') as infile:
+            df = pd.read_csv(df)
+    else:
+        df = pd.DataFrame(df,copy=True)
     keep_bad = [-999]
     def convert_col(row,keep_bad):
         the_id = row[idcol]
@@ -163,6 +212,9 @@ def make_group_index(df_group):
     return df_group
 
 def calc_grades(ax,scores,nbins=10):
+    """
+    returns ax, the_median,the_mean
+    """
     the_median=np.nanmedian(scores)
     the_mean=np.nanmean(scores)
     ax.hist(scores,nbins)
@@ -398,8 +450,11 @@ def normal(gradevec,the_mean,sigma):
     return factor*the_exp
 
 def assign_bin(bincounts,bincenters):
+    """
+    
+    """
     totalcounts = np.sum(bincounts)
-    print(f"total capacity is {totalcounts}")
+    print(f"assign_bin: total capacity is {totalcounts}")
     students = np.arange(0,totalcounts,1)
     current_bin = len(bincenters) - 1
     capacity = bincounts[current_bin]
@@ -429,6 +484,10 @@ def assign_bin(bincounts,bincenters):
     return bin_dict
 
 def create_dist(amp,clip= -5):
+    """
+    amp = approx class size
+    mean of 70 sd of 10
+    """
     zscore = np.linspace(50,100,30)
     sigma = 10
     the_mean = 70
@@ -438,12 +497,16 @@ def create_dist(amp,clip= -5):
     total_area = np.sum(binwidth*binheight)*amp
     bincounts=np.round(binwidth*binheight*amp).astype(int)
     bincounts = bincounts[:clip]
-    print(f"total capacit is {np.sum(bincounts)}")
+    print(f"create_dist: total capacity is {np.sum(bincounts)}")
     bincenters = bincenters[:clip]
     bin_dict=assign_bin(bincounts,bincenters)
     return bin_dict
 
 def apply_boost(row, bin_dict,grade_col):
+    """
+    bin_dict = ideal distribution dictionary from create_dist
+    grade_col = 
+    """
     boost_grade = bin_dict[int(row['rank'])]
     old_grade = float(row[grade_col])
     new_grade = boost_grade
@@ -451,7 +514,8 @@ def apply_boost(row, bin_dict,grade_col):
         new_grade=old_grade
     if old_grade < 1:
         new_grade = old_grade
-    return new_grade
+    row['new_grade'] = new_grade
+    return row
         
 if __name__ == "__main__":
     main()
