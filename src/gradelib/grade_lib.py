@@ -41,6 +41,8 @@ def find_student(name_string,grade_df,name_col='Student'):
     """
     find the student id for a name guess
 
+    usage: find_student('Jones',grade_df)
+
     Parameters
     ----------
 
@@ -67,12 +69,23 @@ def find_student(name_string,grade_df,name_col='Student'):
 
 def make_id(df,idcol):
     """
+    take a dataframe with an id column and turn that id column into a string
+    index for the dataframe
+
+    usage: the_df = make_id(the_df,'SIS User ID')
+
     Parameters
     ----------
     df: either string filename of csv file or pandas dataframe
+
     idcol: str 
        name of column to make id
-    usage: the_df = make_id(the_df,'SIS User ID')
+
+    Returns
+    -------
+
+    df: pandas dataframe with idcol as index
+
     """
     if isinstance(df,str):
         with open(df,'r') as infile:
@@ -81,6 +94,10 @@ def make_id(df,idcol):
         df = pd.DataFrame(df,copy=True)
     keep_bad = [-999]
     def convert_col(row,keep_bad):
+        """
+        make a string id from a floating point value, keeping
+        track of bad ids by appending them to the keep_bad list
+        """
         the_id = row[idcol]
         try:
             #
@@ -97,7 +114,9 @@ def make_id(df,idcol):
             keep_bad.append(bad_val)
         row["the_ids"] = str_id
         return row
-    
+    #
+    #  apply the convert_col function make the_ids
+    #
     df = df.apply(convert_col,args=(keep_bad,),axis=1)
     bad_num = len(keep_bad) - 1
     if bad_num > 0:
@@ -106,6 +125,21 @@ def make_id(df,idcol):
     return df
 
 def find_possible(df_canvas):
+    """
+    finda and return the 'Points Possible' row from a canvas dataframe
+    
+    Parameters
+    ----------
+
+    df_canvas: dataframe
+        canvas spreadsheet as dataframe
+
+    Returns
+    -------
+
+    possible_row: Series
+       points possible as a pandas series object
+    """
     possible_row = df_canvas.loc[
         df_canvas["Student"].str.find("Points Possible") > -1]
     possible_row = possible_row.iloc[0,:]
@@ -115,6 +149,21 @@ def make_canvas_index(df_canvas,idcol='SIS User ID'):
     """
     produce a datafame with nans set to 0 for all columns
     bigger than start_col -- i.e. convert scores but not ids
+
+    use the make_id function below to convert floating point
+    student ids to strings
+
+    Parameters
+    ----------
+
+    df_canvas: dataframe from a canvas gradebook
+
+    Returns
+    -------
+
+    new_canvas_df, possible_row: dataframe, Series
+       new_canvas_df: new dataframe indexed by string id, students only
+       possible_row:  row of points possible
     """
     df_canvas = pd.DataFrame(make_id(df_canvas,idcol),copy=True)
     possible_row = find_possible(df_canvas)
@@ -135,6 +184,7 @@ def make_canvas_index(df_canvas,idcol='SIS User ID'):
     else:
         start_col = 7
     type_dict = {key: np.float for key in df_canvas.columns.values[start_col:]}
+    type_dict['the_ids'] = np.int
     new_canvas_df = df_canvas.astype(dtype=type_dict)
     new_canvas_df.fillna(0., inplace=True)
     return new_canvas_df, possible_row
@@ -220,22 +270,21 @@ def calc_grades(ax,scores,nbins=10):
     ax.hist(scores,nbins)
     return ax,the_median, the_mean
 
-def make_ind_index(df_ind):
-    ind_id_list = []
-    ind_list = []
-    ind_scores = df_ind[["STUDENT ID", "Percent Score"]].to_numpy()
-    nrows, ncols = ind_scores.shape
-    for i in range(nrows):
-        the_id = str(int(ind_scores[i, 0]))
-        the_score = ind_scores[i, 1]
-        ind_id_list.append(the_id)
-        ind_list.append({"id": the_id, "ind_score": the_score})
-    df_ind = pd.DataFrame.from_records(ind_list)
-    df_ind.set_index("id", inplace=True, drop=True)
-    return df_ind
 
 
 def merge_two(df_left, df_right,suffixes=('_x', '_y')):
+    """
+    do a left join on two dataframes using their indices, and return
+    a copy of the merged dataframe
+
+    Parameters
+    ----------
+
+    df_left, df_right:  dataframes to merge
+
+    optional:  suffixes=('_x','_y')
+       suffixes for duplicate columns
+    """
     df_return = pd.merge(df_left,
                          df_right,
                          how="left",
@@ -245,18 +294,6 @@ def merge_two(df_left, df_right,suffixes=('_x', '_y')):
                          suffixes=suffixes)
     return pd.DataFrame(df_return, copy=True)
 
-
-def mark_combined(row):
-    try:
-        group = row["group_score"]
-        if group < row["ind_score"]:
-            group = row["ind_score"]
-        mark = 0.85 * row["ind_score"] + 0.15 * group
-    except NameError:
-        print(f"trouble: {row}")
-    return mark
-
-
 def check_ids(df, good_ids):
     print(f"checking ids")
     for the_id in df.index.to_numpy():
@@ -265,51 +302,19 @@ def check_ids(df, good_ids):
             print(f"miss bad id -- {the_id},closest id -- {nearest_id}")
 
 
-@click.group()
-def main():
-    """
-    set of tools for figure resizing
-    """
-    pass
-
-
-def read_raw_dfs(filenames):
-    name_dict = json.load(filenames)
-    gradebook_re = name_dict['files']['gradebook']
-    gradebook = list(Path().glob(gradebook_re))[0]
-    df_canvas = pd.read_csv(gradebook)
-    name_dict['files']['gradebook'] = gradebook
-    ind_re = name_dict['files']['remark_ind']
-    ind_file = list(Path().glob(ind_re))[0]
-    name_dict['files']['ind_file'] = ind_file
-    df_ind = pd.read_excel(ind_file)
-    group_re = name_dict['files']['remark_group']
-    group_file = list(Path().glob(group_re))[0]
-    df_group = pd.read_excel(group_file)
-    name_dict['files']['group_file'] = group_file
-    return df_canvas, df_ind, df_group, name_dict
-
-#
-# apply this function to gradebook dataframe
-# produce a new dataframe indexed by canvasids
-#
-def get_canvas_id(row,track_bads):
-    try:
-        the_id = f"{int(row['ID']):d}"
-    except ValueError:
-        the_id = int(track_bads[-1])
-        new_id = the_id - 1
-        the_id = f"{int(new_id):d}"
-        track_bads.append(new_id)
-    new_row = pd.Series(row[['Student']])
-    new_row['canvas_id'] = the_id
-    new_row['student_num'] = str(int(row['SIS User ID']))
-    return new_row
-
-
 def make_namedict(canvas_file):
     """
     turn a canvas file into dictionary with canvas id as key
+
+    Parameters
+    ----------
+
+    canvas_file:  str or PurePath object
+
+    Returns
+    -------
+
+    id_dict: dict with canvas id as key
     """
     if isinstance(canvas_file,str) or isinstance(canvas_file,pathlib.PurePath):
         the_list = pd.read_csv(canvas_file)
@@ -327,121 +332,6 @@ def make_namedict(canvas_file):
     id_dict = name_df.to_dict(orient='index')
     return id_dict
 
-
-
-@main.command()
-@click.argument("filenames", type=click.File("r"), nargs=1)
-def check_columns(filenames):
-    df_canvas, df_ind, df_group, name_dict = read_raw_dfs(filenames)
-    print(
-        f"reading {name_dict['files']['gradebook']} head is:\n{df_canvas.head()}"
-    )
-    print(f"sample row: {df_canvas.loc[5]}")
-    print(f"{df_ind.head()=}")
-    print(
-        f"reading {name_dict['files']['ind_file']} head is:\n{df_ind.head()}")
-    print(f"sample row: {df_ind.loc[5]}")
-    print(
-        f"reading {name_dict['files']['group_file']} head is: \n{df_group.head()}"
-    )
-    print(f"sample row: {df_group.loc[5]}")
-
-
-@main.command()
-@click.argument("filenames", type=click.File("r"), nargs=1)
-def make_grades(filenames):
-    """
-    Given the name of a json file with the following format:
-
-    \b
-    {
-        "history": "2019t1",
-        "files": {
-            "gradebook": "*EOSC_340_101.csv",
-            "remark_ind": "*Q3*Grades.xlsx",
-            "remark_group": "*Q3*Group.xlsx"
-        }
-    }
-
-    calculate the quiz grade
-
-    Example: python grade_quizzes.py filenames.json
-
-    """
-    df_canvas, df_ind, df_group, name_dict = read_raw_dfs(filenames)
-    new_canvas_df, possible_row = make_canvas_index(df_canvas)
-    new_df_group = make_group_index(df_group)
-    new_df_ind = make_ind_index(df_ind)
-    print(
-        f"reading {name_dict['files']['gradebook']} head is:\n{df_canvas.head()}"
-    )
-    print(f"sample row: {df_canvas.iloc[5]}")
-    print(
-        f"reading new_df_ind head is:\n{new_df_ind.head()}")
-    print(f"sample row: {new_df_ind.iloc[5]}")
-    print(
-        f"reading new_df_group head is: \n{new_df_group.head()}"
-    )
-    print(f"sample row: {new_df_group.iloc[5]}")
-    student_ids = df_canvas.index.to_list()
-    int_ids = [int(item) for item in student_ids]
-    df_canvas['int_ids'] = int_ids
-    print("checking individual remark")
-    check_ids(new_df_ind, student_ids)
-    print("checking group remark")
-    check_ids(new_df_group, student_ids)
-
-    df_out = merge_two(new_df_ind, new_df_group)
-
-    total_score = df_out.apply(mark_combined, axis=1)
-    df_out["total_score"] = total_score
-
-    # #
-    # # save points possible then drop it
-    # #
-    can_grade_cols = list(df_canvas.columns.to_list())
-    can_mandatory_columns = list(can_grade_cols[:5])
-    df_upload = pd.DataFrame(df_canvas[can_mandatory_columns], copy=True)
-    #
-    # preserve order with this column
-    #
-    can_col = np.linspace(
-          -1, len(df_upload), num=len(df_upload), dtype=np.int, endpoint=False
-    ).astype(np.int)
-    df_upload["sort_order"] = can_col
-    df_doit = merge_two(df_upload, df_out)
-    df_doit.sort_values("sort_order", ascending=True, inplace=True)
-    keep_columns = [
-        "Student",
-        "ID",
-        "SIS User ID",
-        "SIS Login ID",
-        "Section",
-        "ind_score",
-        "group_score",
-        "total_score",
-    ]
-
-    df_doit = df_doit[keep_columns]
-    points_possible = possible_row.iloc[0, :5]
-    points_possible[1:5] = " "
-    extent = pd.Series(
-        [100, 100, 100], index=["ind_score", "group_score", "total_score"]
-    )
-    points_possible = points_possible.append(extent)
-    the_rows = [dict(zip(points_possible.index,points_possible.values))]
-    points_possible=pd.DataFrame.from_records(the_rows)
-    points_possible.index = ['-1']
-    df2=pd.concat([points_possible,df_doit])
-    columns=name_dict['columns']
-    outfile = name_dict['outfile']
-    df2.rename(
-        columns=columns,
-        inplace=True,
-    )
-    df2.to_csv(outfile, index=False)
-    with open('dump.json','w') as outfile:
-        json.dump(columns, outfile,indent=4)
 
 def normal(gradevec,the_mean,sigma):
     factor = 1./(sigma*np.sqrt(2*np.pi))
