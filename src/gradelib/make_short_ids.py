@@ -1,4 +1,5 @@
 from collections import defaultdict
+import copy
 def create_keydict(id_list,keylen=3):
     """
     create a dictionary of the form 
@@ -10,13 +11,24 @@ def create_keydict(id_list,keylen=3):
     digits then the entry will be a length of ubc_ids
     that have those digits in common
     """
-    key_dict =  defaultdict(list)
+    shortid_dict =  defaultdict(list)
     for the_id in id_list:
         the_key = the_id[-keylen:]
-        key_dict[the_key].append(the_id)
-    return key_dict
+        shortid_dict[the_key].append(the_id)
+    #
+    #find all keys with multiple ubc_ids
+    #
+    multi_id_dict = {}
+    short_ids = list(shortid_dict.keys())
+    #
+    # move collided ids to multi_id dict
+    #
+    for new_id in short_ids:
+        if len(shortid_dict[new_id]) > 1:
+            multi_id_dict[new_id]=shortid_dict.pop(new_id)
+    return shortid_dict, multi_id_dict
 
-def make_short_ids(key_dict,keylen=3):
+def make_short_ids(short_ids,multi_ids,keylen=3):
     """
     given a dictionary created by create_keydict, recursively
     break all ties by adding extra digits to the key
@@ -34,46 +46,43 @@ def make_short_ids(key_dict,keylen=3):
     new_dict: dictinary mapping ubc_id: short_id
      where every short_id is unique
     """
-    multi_ids = []
-    short_ids = list(key_dict.keys())
     #
-    #find all keys with multiple ubc_ids
-    #
-    for new_id in short_ids:
-        if len(key_dict[new_id]) > 1:
-            multi_ids.append(new_id)
-    #
-    # make the short ids longer
+    # bump keylen for multi_ids
     #
     newkeylen=keylen+1
+    print(f"{newkeylen=}")
     #
     # rerun the dictionary with the new longer key
     # for those ids in multi_id.  Note that
     # the old key needs to be removed
     #
-    new_key_list = []
-    for conflicted_id in multi_ids:
-        id_list = key_dict[conflicted_id]
-        del(key_dict[conflicted_id]) 
+    new_key_dict=defaultdict(list)
+    for conflicted_id, id_list in multi_ids.items():
+        print(f"{conflicted_id=}")
+        print(f"{multi_ids=}")
         for the_id in id_list: 
             new_key=the_id[-newkeylen:] 
             print(f"collision: generate {new_key=}")
-            key_dict[new_key].append(the_id)
-            new_key_list.append(new_key)
+            new_key_dict[new_key].append(the_id)
     #
     # now sweep the new keys to see if they have
     # multiple ids
     #
-    for new_id in new_key_list:
-        if len(key_dict[new_id]) > 1:
-            multi_ids.append(new_id)
+    for new_id in new_key_dict.keys():
+        del_list = []
+        if len(new_key_dict[new_id]) == 1:
+            short_ids[new_id] = new_key_dict[new_id]
+            del_list.append(new_id)
+    for old_key in del_list:
+        del(new_key_dict[old_key])
     #
     # final dictionary write if multi_ids is empty
     # need to turn [ubc_id] into ubc_id
     #
-    if len(multi_ids) == 0:
-        new_dict = {value[0]:key for key,value in key_dict.items()}
-        return new_dict
+    if len(new_key_dict) == 0:
+        new_dict = {value[0]:key for key,value in short_ids.items()}
+        return new_dict,new_key_dict
     else:
-        keylen=newkeylen
-        return make_short_ids(key_dict,keylen=keylen)
+        multi_ids = copy.deepcopy(new_key_dict)
+        new_short_ids = copy.deepcopy(short_ids)
+        return make_short_ids(new_short_ids,multi_ids,keylen=newkeylen)
