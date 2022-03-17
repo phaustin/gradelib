@@ -51,6 +51,7 @@ def make_short_ids(key_dict,keylen=3):
     # for those ids in multi_id.  Note that
     # the old key needs to be removed
     #
+    new_key_list = []
     for conflicted_id in multi_ids:
         id_list = key_dict[conflicted_id]
         del(key_dict[conflicted_id]) 
@@ -58,16 +59,12 @@ def make_short_ids(key_dict,keylen=3):
             new_key=the_id[-newkeylen:] 
             print(f"collision: generate {new_key=}")
             key_dict[new_key].append(the_id)
+            new_key_list.append(new_key)
     #
-    # repeat the iteration  (tbd: use update instead
-    # of simply running the whole dictionary)
-    # so we don't check any good ideas
-    # note the recursive function call if there are still
-    # multi_ids that need to be fixed
+    # now sweep the new keys to see if they have
+    # multiple ids
     #
-    multi_ids = []
-    short_ids = list(key_dict.keys())
-    for new_id in short_ids:
+    for new_id in new_key_list:
         if len(key_dict[new_id]) > 1:
             multi_ids.append(new_id)
     #
