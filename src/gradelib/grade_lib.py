@@ -67,6 +67,30 @@ def find_student(name_string,grade_df,name_col='Student'):
         the_id = result.index[0]
     return the_id
 
+def convert_col(row,keep_bad, idcol='SIS User ID'):
+    """
+    make a string id from a floating point value, keeping
+    track of bad ids by appending them to the keep_bad list
+    """
+    the_id = row[idcol]
+    try:
+        #
+        # '63514095.0'
+        #
+        the_int = int(float(the_id))
+        str_id = f"{the_int:d}"
+    except Exception as e:
+        print(f"id conversion problem in make_id: {e}")
+        print(f"{the_id=}")
+        bad_val = keep_bad[-1]
+        bad_val+= -1
+        keep_bad.append(bad_val)
+        str_id = f"{bad_val:d}"
+    row["the_ids"] = str_id
+    # print(f"{type(row['the_ids'])}")
+    return row
+
+
 def make_id(df,idcol):
     """
     take a dataframe with an id column and turn that id column into a string
@@ -93,31 +117,10 @@ def make_id(df,idcol):
     else:
         df = pd.DataFrame(df,copy=True)
     keep_bad = [-999]
-    def convert_col(row,keep_bad):
-        """
-        make a string id from a floating point value, keeping
-        track of bad ids by appending them to the keep_bad list
-        """
-        the_id = row[idcol]
-        try:
-            #
-            # '63514095.0'
-            #
-            the_int = int(float(the_id))
-            str_id = f"{int(the_int):d}"
-        except Exception as e:
-            print(f"id conversion problem in make_id: {e}")
-            print(f"{the_id=}")
-            bad_val = keep_bad[-1]
-            str_id = f"{int(bad_val):d}"
-            bad_val+= -1
-            keep_bad.append(bad_val)
-        row["the_ids"] = str_id
-        return row
     #
     #  apply the convert_col function make the_ids
     #
-    df = df.apply(convert_col,args=(keep_bad,),axis=1)
+    df = df.apply(convert_col,args=(keep_bad,idcol),axis=1)
     bad_num = len(keep_bad) - 1
     if bad_num > 0:
         print(f"found {bad_num} bad ids: replaced with {keep_bad[:-1]}")
@@ -184,7 +187,10 @@ def make_canvas_index(df_canvas,idcol='SIS User ID'):
     else:
         start_col = 7
     type_dict = {key: np.float for key in df_canvas.columns.values[start_col:]}
-    type_dict['the_ids'] = np.int
+    #
+    # student ids need to be strings
+    #
+    type_dict['the_ids'] = str
     new_canvas_df = df_canvas.astype(dtype=type_dict)
     new_canvas_df.fillna(0., inplace=True)
     return new_canvas_df, possible_row
