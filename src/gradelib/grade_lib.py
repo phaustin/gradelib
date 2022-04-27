@@ -125,6 +125,9 @@ def make_id(df,idcol):
     if bad_num > 0:
         print(f"found {bad_num} bad ids: replaced with {keep_bad[:-1]}")
     df.set_index("the_ids", inplace=True, drop=False)
+    #
+    # remove the negative ids
+    #
     return df
 
 def find_possible(df_canvas):
@@ -234,18 +237,20 @@ def find_closest(the_string, good_strings,threshold=None):
     good_choice = good_strings[max_index]
     return good_choice, max_index
 
-def make_group_index(df_group):
+def make_group_index(df_group,grade_col='Percent Score'):
     group_ids = [
         "STUDENT ID #1",
         "STUDENT ID #2",
         "STUDENT ID #3",
-        "STUDENT ID #4",
-        "Percent Score",
+        "STUDENT ID #4"
     ]
+    group_ids.extend([grade_col])
+    print(f"{group_ids=}")
     group_scores = df_group[group_ids].to_numpy()
     nrows, ncols = group_scores.shape
     group_id_list = []
     group_list = []
+    keep_bad = -999
     for i in range(nrows):
         row_ids = group_scores[i, :4]
         the_score = group_scores[i, 4]
@@ -254,17 +259,23 @@ def make_group_index(df_group):
             try:
                 the_id = str(int(item))
             except:
+                the_id = str(keep_bad)
                 print((f"trouble reading df_group\n"
-                       f"sudent number {item} set to '-999'"))
-                the_id = str(-999)
+                       f"student number {item} set to {the_id}"))
+                keep_bad += -1
             group_id_list.append(the_id)
-            row_list.append({"id": the_id, "Percent Score": the_score})
+            row_list.append({"id": the_id, grade_col : the_score})
         group_list.append(row_list)
     group_scores = []
     for a_row in group_list:
         group_scores.extend(a_row)
     df_group = pd.DataFrame.from_records(group_scores)
     df_group.set_index("id", inplace=True, drop=True)
+    #
+    # remove the netative indices
+    #
+    hit = [item[0] != '-' for item in df_group.index]
+    df_group = pd.DataFrame(df_group.loc[hit])
     return df_group
 
 def calc_grades(ax,scores,nbins=10):
