@@ -1,8 +1,8 @@
 import click
-from setuptools_scm import get_version
 from .make_zip import write_collect
+import gradelib
 
-version = get_version()
+version = gradelib.__version__
 
 @click.command()
 @click.argument('canvas_zip',type=str)
@@ -11,5 +11,5 @@ version = get_version()
 @click.argument('notebook_name',type=str)
 @click.version_option(version)
 def main(canvas_zip,extracted_zip,assign_name,notebook_name):
-    write_collect(zipfile, new_zip, assign_name, notebook_name)
+    write_collect(canvas_zip, extracted_zip, assign_name, notebook_name)
 

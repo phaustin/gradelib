@@ -1,0 +1,15 @@
+name: mainsite
+channels:
+  - eoas_ubc
+  - conda-forge
+dependencies:
+  - git
+  - python>3.8
+  - pip
+  - mamba
+  - click
+  - setuptools_scm
+  - pandas
+  - fuzzywuzzy
+  - importlib_resources
+# conda-lock --kind explicit --file environment.yml -p linux-64
