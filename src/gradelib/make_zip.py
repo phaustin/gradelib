@@ -10,7 +10,7 @@ from zipfile import ZipFile
 
 from .utils import working_directory
 
-def rename_file(zip_filename,assign_name, notebook_name):
+def rename_file(zip_filename: str,assign_name: str, notebook_name: str):
     """
     given a zip_filename like:
       mercerkendra_27495_4022961_Finite_Volume_Assignment.ipynb
@@ -25,7 +25,6 @@ def rename_file(zip_filename,assign_name, notebook_name):
     assign_name:  nbgrader assignment
     notebook_name: nbgrader notebook
     """
-    print(f"{zip_filename=}")
     elements = zip_filename.split("_")
     if elements[1]=='LATE':
         late = elements.pop(1)
@@ -45,18 +44,18 @@ def rename_file(zip_filename,assign_name, notebook_name):
     )
     return new_name
 
-def write_collect(canvas_zip, grader_zip, assign_name, notebook_name):
+def write_collect(canvas_zip: Path, grader_zip: str, 
+                  assign_name: str, notebook_name: str):
     """
     create a temporary directory and extract each file from the canvas_zip archive
     renaming it to an nbgrader-compatible filename and writing it to
     the new archive grader_zip which will be in the same directory as canvas_zip
 
     canvas_zip: full Path to canvas zipfile
-    grader_zip: filename of new zipfile
+    grader_zip: filename of new zipfile -- placed in canvas_zip folder
     assign_name: nbgrader assignment
     notebook_name: notebook to run
     """
-    canvas_zip = Path(canvas_zip).resolve()
     canvas_dir = canvas_zip.parent
     grader_zip = canvas_dir / grader_zip
     namelist=[]
