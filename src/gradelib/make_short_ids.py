@@ -81,8 +81,9 @@ def make_short_ids(short_ids: dict,multi_ids: dict,keylen=3):
     # now sweep the new keys to see if they have
     # multiple ids
     #
+    del_list=[]
     for new_id in new_key_dict.keys():
-        del_list = []
+        # del_list = []
         if len(new_key_dict[new_id]) == 1:
             short_ids[new_id] = new_key_dict[new_id]
             del_list.append(new_id)
@@ -102,7 +103,6 @@ def make_short_ids(short_ids: dict,multi_ids: dict,keylen=3):
         multi_ids = copy.deepcopy(new_key_dict)
         new_short_ids = copy.deepcopy(short_ids)
         return make_short_ids(new_short_ids,multi_ids,keylen=newkeylen)
-
 
 if __name__ =="__main__":
     id_list=['599443','605072','965120','731093','842093']

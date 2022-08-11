@@ -1,39 +1,43 @@
+import click
+from gradelib.make_short_ids import create_keydict, make_short_ids
+from gradelib.grade_lib import make_id
+import gradelib
+import pandas as pd
+from pathlib import Path
+import json
 
+version = gradelib.__version__
 
+def add_col(row,shortid_dict):
+    row['short_id']=shortid_dict[row.name]
+    return row
 
-
-class_dir = Path('e211_labs')
-class_dir.mkdir(exist_ok=True,parents=True)
-for sname in sname_dict.keys():
-    new_dir = class_dir / sname
-    new_dir.mkdir(exist_ok=True, parents=True)
-    sname_dict[sname]['dirpath']=new_dir
-    canvas_id = sname_dict[sname]['canvas_id']
-    name_dict[canvas_id]['dirpath']=new_dir.resolve()
-
-def add_lab(name_dict,lab_dir,lab_name):
-    """
-    add an html path to a sname_dict entry
-    """
-    file_list = list(lab_dir.glob(f'**/{lab_name}'))
-    for the_file in file_list:
-        parts = the_file.parts
-        if str(lab_dir).find('feedback') > -1:
-            canvas_id = parts[-3]
-            key = lab_name
-        else:
-            filename=the_file.parts[-1]
-            parts=filename.split('_')
-            canvas_id = parts[-4]
-            # remove the *
-            key = lab_name[1:]
-        try:
-            name_dict[canvas_id]['html_files'][key]=the_file
-        except KeyError:
-            pass
-
-
-feedback_dir = Path.home() / 'repos/nbgrader_dir/feedback'
-for the_lab in ['lab_wk2.html','lab_wk8.html','lab_wk9.html','lab_wk11.html']:
-    add_lab(name_dict, feedback_dir, the_lab)
-        
+@click.command()
+@click.version_option(version)
+@click.argument('classlist_csv',type=str)
+@click.argument('id_col',type=str)
+@click.argument('web_folder',type=str)
+def main(classlist_csv: str, id_col: str, web_folder: str):
+    gradebook_file = Path(classlist_csv).resolve()
+    df_gradebook = pd.read_csv(gradebook_file)
+    df_gradebook = make_id(df_gradebook,'id')
+    df_gradebook = df_gradebook.set_index('the_ids',drop=False)
+    id_list = list(df_gradebook['the_ids'])
+    keylen=3
+    shortid_dict, multiid_dict = create_keydict(id_list,keylen=keylen)
+    new_dict, new_key_dict =make_short_ids(shortid_dict,multiid_dict,keylen=keylen)
+    print(new_dict)
+    df_gradebook = df_gradebook.apply(add_col,args=(new_dict,),axis=1)
+    web_folder = Path(web_folder).resolve()
+    for sid in df_gradebook['short_id']:
+        new_dir= web_folder / sid
+        new_dir.mkdir(exist_ok=True,parents=True)
+    json_name = f"{gradebook_file.stem}_with_shortids.json"
+    full_path = gradebook_file.parent / json_name
+    output_list = df_gradebook.to_dict(orient="records")
+    with open(full_path,'w') as outfile:
+        json.dump(output_list,outfile,indent=4)
+    
+if __name__ == "__main__":
+    main()
+    
