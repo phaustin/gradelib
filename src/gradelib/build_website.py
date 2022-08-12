@@ -18,9 +18,13 @@ def add_col(row,shortid_dict):
 @click.argument('id_col',type=str)
 @click.argument('web_folder',type=str)
 def main(classlist_csv: str, id_col: str, web_folder: str):
+    """
+    \b
+    build_website classlist.csv id e211_nbgrader_2022/website_e211/e211_marked_labs
+    """
     gradebook_file = Path(classlist_csv).resolve()
     df_gradebook = pd.read_csv(gradebook_file)
-    df_gradebook = make_id(df_gradebook,'id')
+    df_gradebook = make_id(df_gradebook, id_col)
     df_gradebook = df_gradebook.set_index('the_ids',drop=False)
     id_list = list(df_gradebook['the_ids'])
     keylen=3
