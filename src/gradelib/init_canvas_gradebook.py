@@ -1,7 +1,7 @@
 """
 read a csv file with student ids and create the gradebook.db
 
-python init_gradebook.py gradebook.db id lastname_col firstname_col classlist.csv
+python init_gradebook.py gradebook.db id_col last_first_col classlist.csv
 """
 from nbgrader.api import Gradebook
 import sqlalchemy as dbsql
@@ -9,26 +9,26 @@ import pandas as pd
 from pathlib import Path
 import click
 import gradelib
+from gradelib.grade_lib import make_id
 
 version = gradelib.__version__
 
 @click.command()
 @click.version_option(version)
-@click.argument('classlist_csv',type=str)
 @click.argument('gradebook_file',type=str)
 @click.argument('id_col',type=str)
-@click.argument('lastname_col',type=str)
-@click.argument('firstname_col',type=str)
-def main(classlist_csv: str, gradebook_file: str,id_col: str, lastname_col: str,  firstname_col: str):
+@click.argument('last_first_col',type=str)
+@click.argument('classlist_csv',type=str)
+def main(classlist_csv: str, gradebook_file: str,id_col: str, last_first_col: str):
     """
     read a csv file with student ids and create the gradebook.db
 
     \b
     example:
-    init_gradebook nbgrader_demo/classlist.csv gradebook.db id last_name first_name
+    init_gradebook nbgrader_demo/classlist.csv gradebook.db id_col last_first_col
 
     \b
-    which will create gradebook.db in the current directory
+    which will create  or modifiy gradebook.db in the current directory
 
 
     where:
@@ -37,8 +37,7 @@ def main(classlist_csv: str, gradebook_file: str,id_col: str, lastname_col: str,
     classlist_csv: path to classlist csv file with columns for id number, lastname and firstname
     gradebook_file:  path to gradebook database to be created
     id_col: name of the id column in the csv file
-    lastname_col: name of the lastname column in the csv file
-    firstname_col: name of the firstname column in the csv file
+    last_first_col: name of the column with student name in the csv file
     """
     gradebook_file = Path(gradebook_file)
     classlist_csv = Path(classlist_csv)
@@ -49,12 +48,18 @@ def main(classlist_csv: str, gradebook_file: str,id_col: str, lastname_col: str,
         gradebook_file.unlink()
     
     gb = Gradebook(db_name)
+    # df_gradebook = pd.read_csv(classlist_csv)
+    # df_gradebook = df_gradebook.set_index(id_col, drop=False)
     df_gradebook = pd.read_csv(classlist_csv)
-    df_gradebook = df_gradebook.set_index(id_col, drop=False)
+    df_gradebook = make_id(df_gradebook,id_col)
+    print(df_gradebook.head())
     print(f"\ndata frame crated from {classlist_csv}\n{df_gradebook.head()}\n")
     for the_id,row  in df_gradebook.iterrows():
-        first_name, last_name = row['first_name'], row['last_name']
-        student_dict={'first_name':first_name,'last_name':last_name}
+        if the_id[0] == '-':
+            continue
+        lastname,firstname = row['Student'].split(',')
+        print(lastname,firstname,the_id)
+        student_dict={'first_name':firstname,'last_name':lastname}
         gb.add_student(the_id,**student_dict)
 
     #check the result by reading db
