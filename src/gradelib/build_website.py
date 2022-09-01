@@ -19,6 +19,13 @@ def add_col(row,shortid_dict):
 @click.argument('web_folder',type=str)
 def main(classlist_csv: str, id_col: str, web_folder: str):
     """
+    create a folder with truncated student ids
+
+    \b
+    classlist_csv:  path to csv file with id column
+    id_col:  name of column containing the id
+    web_folder: path to new folder to hold the truncated id folders
+
     \b
     build_website classlist.csv id e211_nbgrader_2022/website_e211/e211_marked_labs
     """
