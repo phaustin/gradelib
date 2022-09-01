@@ -3,9 +3,18 @@ requires = [
     "setuptools >= 48",
     "setuptools_scm[toml] >= 4, <6",
     "setuptools_scm_git_archive",
-    "wheel >= 0.29.0",
+    "wheel >= 0.29.0"
 ]
 build-backend = 'setuptools.build_meta'
+
+[project]
+name = "gradelib"
+description = "eoas gradelib"
+dynamic = ["version"]   
+dependencies = [
+    "pandas",
+    "sysrsync"
+]
 
 [tool.setuptools_scm]
 write_to = "src/gradelib/VERSION.txt"

@@ -12,4 +12,5 @@ dependencies:
   - pandas
   - fuzzywuzzy
   - importlib_resources
+  - sysrsync
 # conda-lock --kind explicit --file environment.yml -p linux-64
