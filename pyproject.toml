@@ -13,7 +13,10 @@ description = "eoas gradelib"
 dynamic = ["version"]   
 dependencies = [
     "pandas",
-    "sysrsync"
+    "sysrsync",
+    "fuzzywuzzy",
+    "importlib_resources",
+    "click"
 ]
 
 [tool.setuptools_scm]
