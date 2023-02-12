@@ -18,6 +18,7 @@ dependencies = [
     "pandas",
     "sysrsync",
     "fuzzywuzzy",
+    '"python-levenshtein",
     "importlib_resources",
     "click"
 ]
