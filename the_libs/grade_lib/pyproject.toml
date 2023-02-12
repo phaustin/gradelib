@@ -18,7 +18,7 @@ dependencies = [
     "pandas",
     "sysrsync",
     "fuzzywuzzy",
-    '"python-levenshtein",
+    "python-levenshtein",
     "importlib_resources",
     "click"
 ]
@@ -40,6 +40,7 @@ build_website = "gradelib.build_website:main"
 [tool.setuptools_scm]
 write_to = "the_libs/grade_lib/src/gradelib/_version.py"
 root = "../.."
+x
 # this finds last tag of the form v0.2.8
 # copied from https://github.com/dib-lab/screed/blob/latest/pyproject.toml
 #git_describe_command = "git describe --dirty --tags --long --match v* --first-parent"
