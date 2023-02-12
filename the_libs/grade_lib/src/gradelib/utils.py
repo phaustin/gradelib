@@ -9,6 +9,7 @@ import contextlib
 import os
 from zipfile import ZipFile
 from nbconvert import HTMLExporter
+from importlib.metadata import version, PackageNotFoundError
 
 @contextlib.contextmanager
 def working_directory(path):
@@ -22,12 +23,13 @@ def working_directory(path):
     finally:
         os.chdir(prev_cwd)
 
-import importlib_resources as ir
 def get_version(modulename):
     contents=list(ir.contents(modulename))
-    with ir.open_text(modulename,'VERSION.txt') as f:
-        version=f.read()
-    return version
+    try:
+        __version__ = version("grade_lib")
+    except PackageNotFoundError:
+        __version__ = "unknown version"
+    return __version__
 
 def make_page(notebook_file,html_file):
     with open(notebook_file,'r') as in_file:
