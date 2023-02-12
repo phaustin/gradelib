@@ -1,0 +1,44 @@
+[build-system]
+requires = [
+    "setuptools >= 48",
+    "setuptools_scm[toml] >= 4, <6",
+    "setuptools_scm_git_archive",
+    "wheel >= 0.29.0"
+]
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = "gradelib"
+description = "eoas gradelib"
+dynamic = ["version"]   
+authors = [
+  { name="Philip Austin", email="paustin@eoas.ubc.ca" },
+]
+dependencies = [
+    "pandas",
+    "sysrsync",
+    "fuzzywuzzy",
+    "importlib_resources",
+    "click"
+]
+
+[project.scripts]
+write_zipfile = "gradelib.write_zipfile:main"
+write_dirtree = "gradelib.write_dirtree:main"
+rename_files = "gradelib.rename_files:main"
+copy_files = "gradelib.copy_files:main"
+run_notebooks = "gradelib.run_notebooks:main"
+build_html = "gradelib.build_html:main"
+move_files = "gradelib.move_files:main"
+convert_submissions = "gradelib.convert_submissions:main"
+init_gradebook = "gradelib.init_gradebook:main"
+copy_website = "gradelib.copy_website:main"
+build_website = "gradelib.build_website:main"
+
+
+[tool.setuptools_scm]
+write_to = "the_libs/grade_lib/src/gradelib/_version.py"
+root = "../.."
+# this finds last tag of the form v0.2.8
+# copied from https://github.com/dib-lab/screed/blob/latest/pyproject.toml
+#git_describe_command = "git describe --dirty --tags --long --match v* --first-parent"
