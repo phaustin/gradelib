@@ -88,7 +88,7 @@ def make_canvas_index(df_canvas,idcol='Student Number'):
     #
     hit = [item[0] == '-' for item in df_canvas.index]
     df_canvas.drop(df_canvas.index[hit], inplace=True)
-    type_dict = {key: np.float for key in df_canvas.columns.values[7:]}
+    type_dict = {key: float for key in df_canvas.columns.values[7:]}
     new_canvas_df = df_canvas.astype(dtype=type_dict)
     new_canvas_df.fillna(0., inplace=True)
     return new_canvas_df, possible_row

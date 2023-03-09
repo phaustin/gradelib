@@ -7,7 +7,7 @@ root_dir = Path(__file__).resolve().parent
 from importlib.metadata import version, PackageNotFoundError
 
 try:
-    __version__ = version("grade_lib")
+    __version__ = version("gradelib")
 except PackageNotFoundError:
     __version__ = "unknown version"
 
