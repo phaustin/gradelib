@@ -20,8 +20,8 @@ def make_upload(df_canvas):
     # preserve sort order with this column
     #
     can_col = np.linspace(
-          -1, len(df_upload), num=len(df_upload), dtype=np.int, endpoint=False
-    ).astype(np.int)
+          -1, len(df_upload), num=len(df_upload), dtype=int, endpoint=False
+    ).astype(int)
     df_upload["sort_order"] = can_col
     return df_upload
 
@@ -189,7 +189,7 @@ def make_canvas_index(df_canvas,idcol='SIS User ID'):
         start_col = col_num +1
     else:
         start_col = 7
-    type_dict = {key: np.float for key in df_canvas.columns.values[start_col:]}
+    type_dict = {key: float for key in df_canvas.columns.values[start_col:]}
     #
     # student ids need to be strings
     #
