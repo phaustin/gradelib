@@ -29,16 +29,29 @@ def make_upload(df_canvas):
     return df_upload
 
 
-def add_possible(df_upload,possible_row,col_name,possible_points):
-    possible_row[1:5] = " "
-    colnames = list(df_upload.columns[:5])
-    colnames.append(col_name)
-    possible_row = possible_row[:5].append(pd.Series([possible_points]))
-    the_rows = [dict(zip(colnames,possible_row.values))]
+def add_possible(df_upload,possible_row,possible_points):
+    """
+    Parameters
+    ----------
+    
+    df_upload: pd.DataFrame
+        merged dataframe --  df_upload from make_upload merged with grades dataframe
+        
+    possible_row: list
+        from make_canvas_index  -- need first 5 columns
+        
+    possible_points: list
+         list of possible points to be extended onto possible_row
+    """
+    colnames = list(df_upload.columns)
+    first_row = list(possible_row[:5])
+    first_row.extend(possible_points)
+    the_rows = [dict(zip(colnames,first_row))]
     points_possible=pd.DataFrame.from_records(the_rows)
     points_possible.index = ['-1']
     df3=pd.concat([points_possible,df_upload])
     return df3
+
 
 def find_student(name_string,grade_df,name_col='Student'):
     """
