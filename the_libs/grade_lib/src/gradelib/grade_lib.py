@@ -253,13 +253,22 @@ def find_closest(the_string, good_strings,threshold=None):
     good_choice = good_strings[max_index]
     return good_choice, max_index
 
-def make_group_index(df_group,grade_col='Percent Score'):
-    group_ids = [
-        "STUDENT ID #1",
-        "STUDENT ID #2",
-        "STUDENT ID #3",
-        "STUDENT ID #4"
-    ]
+def make_group_index(df_group,grade_col='Percent Score',group_ids=None):
+    """
+    Parameters
+    ----------
+
+    df_group
+    grade_col
+    group_ids (optional)
+    """
+    if group_ids is None:
+        group_ids = [
+            "STUDENT ID #1",
+            "STUDENT ID #2",
+            "STUDENT ID #3",
+            "STUDENT ID #4"
+        ]
     group_ids.extend([grade_col])
     print(f"{group_ids=}")
     group_scores = df_group[group_ids].to_numpy()
@@ -327,10 +336,24 @@ def merge_two(df_left, df_right,suffixes=('_x', '_y')):
                          suffixes=suffixes)
     return pd.DataFrame(df_return, copy=True)
 
-def check_ids(df, good_ids):
-    print(f"checking ids")
-    for the_id in df.index.to_numpy():
-        nearest_id = find_closest(the_id, good_ids)
+def check_ids(id_list, good_ids):
+    """
+    compare ids against a registration list
+
+    Parameters
+    ----------
+
+    id_list: list[str]
+       list of student ids
+
+    good_ids: list[str]
+       list of registered students
+
+    Returns: tuple
+       None
+    """
+    for the_id in id_list:
+        nearest_id, score = find_closest(the_id, good_ids)
         if nearest_id != the_id:
             print(f"miss bad id -- {the_id},closest id -- {nearest_id}")
 
