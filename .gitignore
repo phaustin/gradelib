@@ -1,1 +1,5 @@
 VERSION.txt
+*egg-info*
+*.egg-info*
+src/gradelib.egg-info*
+src/gradelib.egg-info/

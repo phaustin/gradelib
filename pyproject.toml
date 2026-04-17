@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling","hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gradelib"
+description = "atsc405 code"
+authors = [
+  { name="Philip Austin", email="paustin@eoas.ubc.ca" },
+]
+dynamic = ["version"]
+
+[project.scripts]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/gradelib/_version.py"
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+authors = ["Phil Austin <paustin@eos.ubc.ca>"]
+name = "gradelib"
+preview = ["pixi-build"]
+
+[tool.pixi.dependencies]
+python = ">3.12"
+pandas = "*"
+click = "*"
+thefuzz = ">=0.22.1,<0.23"
+importlib_resources = ">=7.1.0,<8"
+
+[tool.pixi.pypi-dependencies]
+gradelib = { path = ".", editable = true }
+
+[tool.pixi.tasks]
